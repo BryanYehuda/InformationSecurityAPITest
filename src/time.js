@@ -1,2 +1,3 @@
-let time = String(new Date().getTime());
-module.exports = time;
+import moment from 'moment';
+
+console.log(moment().utc().format('x'));
