@@ -157,5 +157,5 @@ const ftx = new Orders({
 // The path and method needed to make a Request to FTX's Server
 ftx.request({
   method: 'GET',
-  path: '/orders?market=BTC-PERP',
+  path: '/account',
 }).then(console.log); // Then we output the results
