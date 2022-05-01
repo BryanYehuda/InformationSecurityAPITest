@@ -6,38 +6,40 @@ const USER_AGENT = 'BRYAN';
 const DEFAULT_ENDPOINT = 'ftx.com';
 const DEFAULT_HEADER_PREFIX = 'FTX';
 
-class FTXRest {
-  constructor(config) {
+// We are creating a Balance class to accomodate our Request to the FTX's Server
+class Balance {
+  constructor(setting) {
     this.ua = USER_AGENT;
     this.timeout = 90 * 1000;
-
     this.agent = new Agent({
       keepAlive: true,
       timeout: 90 * 1000,
       keepAliveMsecs: 1000 * 60,
     });
 
-    if (!config) {
+    if (!setting) {
       return;
     }
 
-    if (config.key && config.secret) {
-      this.key = config.key;
-      this.secret = config.secret;
+    if (setting.key && setting.secret) {
+      this.key = setting.key;
+      this.secret = setting.secret;
     }
 
-    if (config.timeout) {
-      this.timeout = config.timeout;
+    if (setting.timeout) {
+      this.timeout = setting.timeout;
     }
 
-    if (config.userAgent) {
-      this.ua += ` | ${config.userAgent}`;
+    if (setting.userAgent) {
+      this.ua += ` | ${setting.userAgent}`;
     }
 
-    this.endpoint = config.endpoint || DEFAULT_ENDPOINT;
-    this.headerPrefix = config.headerPrefix || DEFAULT_HEADER_PREFIX;
+    this.endpoint = setting.endpoint || DEFAULT_ENDPOINT;
+    this.headerPrefix = setting.headerPrefix || DEFAULT_HEADER_PREFIX;
   }
 
+  // We are creating a draft so that we save time when we are sending our
+  // request because we already have a template of what to be sent
   createDraft({
     path,
     method,
@@ -49,17 +51,17 @@ class FTXRest {
     }
 
     path = `/api${path}`;
-    let payload = '';
+    let paydata = '';
     if (method === 'GET' && data) {
       path += `?${stringify(data)}`;
     } else if (data) {
-      payload = JSON.stringify(data);
+      paydata = JSON.stringify(data);
     }
 
     const start = +new Date();
 
     const signature = createHmac('sha256', this.secret)
-      .update(start + method + path + payload).digest('hex');
+      .update(start + method + path + paydata).digest('hex');
 
     const options = {
       host: this.endpoint,
@@ -76,12 +78,14 @@ class FTXRest {
         [`${this.headerPrefix}-SIGN`]: signature,
       },
       timeout,
-      payload,
+      paydata,
     };
 
     return options;
   }
 
+  // We are sending the request to FTX's server using the specified
+  // API Key, Method, and path
   requestDraft(draft) {
     return new Promise((resolve, reject) => {
       const req = _request(draft, (res) => {
@@ -134,7 +138,7 @@ class FTXRest {
         }
       });
 
-      req.end(draft.payload);
+      req.end(draft.paydata);
     });
   }
 
@@ -143,12 +147,14 @@ class FTXRest {
   }
 }
 
-const ftx = new FTXRest({
+// The Api Key needed to make a Request to FTX's Server
+const ftx = new Balance({
   key: '_njFKoPZrOV_9Tme2-m5vQGP8eCL3nKoJ2GTuuFU',
   secret: '9nHenFZftNXI5vPVcEW62lZtMpqGbhyIExQOaMTU',
 });
 
+// The path and method needed to make a Request to FTX's Server
 ftx.request({
   method: 'GET',
   path: '/wallet/balances',
-}).then(console.log);
+}).then(console.log); // Then we output the results
